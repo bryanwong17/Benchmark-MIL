@@ -1,0 +1,16 @@
+gpu_id: 0
+
+batch_size: 1024
+num_workers: 0
+
+# Dataset settings
+dataset:
+  root: '/vast/kaist/WSI_datasets'
+  name: 'tcga_nsclc'
+  mean: [0.485, 0.456, 0.406] # ImageNet mean normalization
+  std: [0.229, 0.224, 0.225] # ImageNet std normalization
+  
+# Model settings
+feature_extractor:
+  name: 'resnet50-tr-supervised-imagenet1k'
+  pretrained_path: 
