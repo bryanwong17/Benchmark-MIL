@@ -17,7 +17,7 @@ Create a new environment and activate it
 conda create --name benchmark_mil python==3.12.2
 conda activate benchmark_mil
 conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia
-python -m pip install opencv-contrib-python pytorch-lightning==2.0.2 torchmetrics==0.11.4 pytorch_optimizer pandas wandb tqdm timm==0.9.16 jpeg4py hydra-core omegaconf future nystrom-attention==0.0.9 git+https://github.com/oval-group/smooth-topk.git
+python -m pip install opencv-contrib-python pytorch-lightning==2.0.2 torchmetrics==0.11.4 pytorch_optimizer pandas wandb tqdm timm==0.9.16 jpeg4py hydra-core omegaconf future nystrom-attention==0.0.9 joblib git+https://github.com/oval-group/smooth-topk.git
 ```
 
 ## Dataset Preparation
