@@ -74,7 +74,7 @@ def get_mil_model(mil_model, num_feats, num_classes, loss_weight=None):
 
     return classifier_model, loss
 
-def get_model_module(args, mil_model, num_feats, num_classes, loss_weight=None):
+def get_model_module(args, seed, class_names_list, mil_model, num_feats, num_classes, loss_weight=None):
     from pl_model.forward_fn import get_forward_func
     task = "multiclass"
     classifier_model, loss = get_mil_model(mil_model, num_feats, num_classes, loss_weight=loss_weight)
@@ -82,8 +82,8 @@ def get_model_module(args, mil_model, num_feats, num_classes, loss_weight=None):
 
     if mil_model == "DTFD-MIL":
         from pl_model.mil_trainer_dtfdmil import DTFDTrainerModule
-        trainer_module = DTFDTrainerModule(args, classifier_model, loss, get_metrics(num_classes, task))
+        trainer_module = DTFDTrainerModule(args, seed, class_names_list, classifier_model, loss, get_metrics(num_classes, task))
     else:
-        trainer_module = MILTrainerModule(args, classifier_model, loss, get_metrics(num_classes, task), num_classes, forward_func=forward_func)
+        trainer_module = MILTrainerModule(args, seed, class_names_list, classifier_model, loss, get_metrics(num_classes, task), num_classes, forward_func=forward_func)
                                     
     return trainer_module

@@ -63,7 +63,7 @@ def main(args):
 
         loss_weight = get_loss_weight(args, data_module)
     
-        trainer_model = get_model_module(args, args.mil_model, args.num_feats, num_classes, loss_weight=loss_weight)
+        trainer_model = get_model_module(args, seed, class_names_list, args.mil_model, args.num_feats, num_classes, loss_weight=loss_weight)
 
         save_seed_dir = Path(save_dir, f"seed_{seed}")
         save_seed_dir.mkdir(parents=True, exist_ok=True)

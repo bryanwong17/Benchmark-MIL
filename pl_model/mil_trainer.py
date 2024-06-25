@@ -1,14 +1,24 @@
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
 import torch
 import torch.nn as nn
 import pytorch_lightning as pl
 
+from sklearn.metrics import confusion_matrix
 from pytorch_optimizer import Lookahead
 
 class MILTrainerModule(pl.LightningModule):
-    def __init__(self, args, classifier, loss, metrics, num_classes, forward_func="general"):
+    def __init__(self, args, seed, class_names_list, classifier, loss, metrics, num_classes, forward_func="general"):
         super(MILTrainerModule, self).__init__()
 
         self.args = args
+        self.seed = seed
+        self.class_names_list = class_names_list
+
+        self.test_preds = []
+        self.test_labels = []
         
         # Lookahead optimizer (TransMIL) can only work with automatic optimization
         if self.args.mil_model != "TransMIL":
@@ -88,12 +98,34 @@ class MILTrainerModule(pl.LightningModule):
         self.log("Loss/final_test", loss, on_step=False, on_epoch=True, sync_dist=True, batch_size=self.args.batch_size)
         self.test_metrics.update(y_prob, label)
         self.log_dict(self.test_metrics, on_step=False, on_epoch=True, sync_dist=True, batch_size=self.args.batch_size)
+
+        self.test_preds.append(np.argmax(y_prob.cpu().numpy(), axis=1))
+        self.test_labels.append(label.cpu().numpy())
+
         return self.test_metrics
 
     def on_train_epoch_end(self):
         sch = self.lr_schedulers()
         if sch is not None and self.args.mil_model != "TransMIL":
             sch.step()
+    
+    def on_test_epoch_end(self):
+        all_preds = np.concatenate(self.test_preds)
+        all_labels = np.concatenate(self.test_labels)
+        cm = confusion_matrix(all_labels, all_preds)
+
+        plt.figure(figsize=(10, 7))
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=self.class_names_list, yticklabels=self.class_names_list)
+        plt.xlabel("Predicted")
+        plt.ylabel("True")
+        plt.title(f"{self.args.mil_model}/{self.args.feature_extractor}/seed_{self.seed}")
+
+        # Save the plot as .jpg
+        plt.savefig(f"{self.args.output_dir}/{self.args.dataset_name}/{self.args.mil_model}/{self.args.feature_extractor}/seed_{self.seed}/confusion_matrix.jpg", format="jpg")
+
+        # Clear lists for next testing phase
+        self.test_preds = []
+        self.test_labels = []
     
     def configure_optimizers(self):
         params = [{"params": filter(lambda p: p.requires_grad, self.classifier.parameters())}]
