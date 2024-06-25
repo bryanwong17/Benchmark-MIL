@@ -120,10 +120,8 @@ class MILTrainerModule(pl.LightningModule):
         plt.ylabel("True")
         plt.title(f"{self.args.mil_model}/{self.args.feature_extractor}/seed_{self.seed}")
 
-        # Save the plot as .jpg
         plt.savefig(f"{self.args.output_dir}/{self.args.dataset_name}/{self.args.mil_model}/{self.args.feature_extractor}/seed_{self.seed}/confusion_matrix.jpg", format="jpg")
 
-        # Clear lists for next testing phase
         self.test_preds = []
         self.test_labels = []
     
