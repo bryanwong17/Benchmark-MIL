@@ -58,7 +58,8 @@ def main(args):
 
         data_module = PatchFeaturesWSIDataModule(
             args.dataset_root, args.dataset_name, dataset_df, 
-            class_names_list, args.feature_extractor, args.num_workers
+            class_names_list, args.feature_extractor, args.num_workers,
+            few_shot_samples_per_class=args.few_shot_samples_per_class, seed=seed
         )
 
         loss_weight = get_loss_weight(args, data_module)

@@ -22,6 +22,8 @@ def add_common_arguments(parser):
                         help="The name of MIL model or aggregator")
 
     # training related parameters
+    parser.add_argument("--few-shot-samples-per-class", type=int, default=None, help="Number of samples per class for few-shot learning")
+
     parser.add_argument("--epochs", type=int, default=200, help="Number of epochs to train")
     parser.add_argument("--precision", type=int, default=32, help="32 or 16 bit precision during training")
     parser.add_argument("--lr", type=float, default=1e-4, help="Initial learning rate (default: 1e-4)")
