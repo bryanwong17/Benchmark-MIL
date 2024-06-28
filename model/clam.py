@@ -108,7 +108,7 @@ class CLAM_SB(nn.Module):
         self.instance_classifiers = nn.ModuleList(instance_classifiers)
         self.k_sample = k_sample
         if instance_loss_fn == 'svm':
-            self.instance_loss_fn = SmoothTop1SVM(n_classes=2)
+            self.instance_loss_fn = SmoothTop1SVM(n_classes=n_classes)
         elif instance_loss_fn == 'ce':
             self.instance_loss_fn = nn.CrossEntropyLoss()
         else:
@@ -232,7 +232,7 @@ class CLAM_MB(CLAM_SB):
         self.instance_classifiers = nn.ModuleList(instance_classifiers)
         self.k_sample = k_sample
         if instance_loss_fn == 'svm':
-            self.instance_loss_fn = SmoothTop1SVM(n_classes=2)
+            self.instance_loss_fn = SmoothTop1SVM(n_classes=n_classes)
         elif instance_loss_fn == 'ce':
             self.instance_loss_fn = nn.CrossEntropyLoss()
         else:
