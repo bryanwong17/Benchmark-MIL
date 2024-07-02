@@ -25,11 +25,9 @@ def main(args):
 
     class_names_list = get_class_names(args.dataset_name)
     num_classes = len(class_names_list)
+    if args.dataset_name == "data1":
+        num_classes = num_classes - 1
     print(f"{args.dataset_name} has {num_classes} classes")
-
-    dataset_csv_path = Path(f"dataset_csv/{args.dataset_name}.csv")
-    dataset_csv_path.parent.mkdir(parents=True, exist_ok=True)
-    dataset_df = pd.read_csv(dataset_csv_path)
 
     metrics = {
         "Seed": [],
@@ -48,7 +46,9 @@ def main(args):
  
         save_dir = Path(
             args.output_dir, 
-            args.dataset_name, 
+            args.dataset_name,
+            args.magnification,
+            args.patch_size,
             f"{args.mil_model}-{args.distill}" if args.mil_model == "DTFD-MIL" else args.mil_model, 
             args.feature_extractor
         )
@@ -57,14 +57,13 @@ def main(args):
         save_parameters(args, save_dir)
 
         data_module = PatchFeaturesWSIDataModule(
-            args.dataset_root, args.dataset_name, dataset_df, 
-            class_names_list, args.feature_extractor, args.num_workers,
-            few_shot_samples_per_class=args.few_shot_samples_per_class, seed=seed
+            args.dataset_name, args.magnification, args.patch_size, 
+            class_names_list, args.feature_extractor, args.num_workers
         )
 
         loss_weight = get_loss_weight(args, data_module)
     
-        trainer_model = get_model_module(args, seed, class_names_list, args.mil_model, args.num_feats, num_classes, loss_weight=loss_weight)
+        trainer_model = get_model_module(args, seed, args.mil_model, args.num_feats, num_classes, loss_weight=loss_weight)
 
         save_seed_dir = Path(save_dir, f"seed_{seed}")
         save_seed_dir.mkdir(parents=True, exist_ok=True)

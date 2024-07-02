@@ -29,7 +29,7 @@ def list_split(list_, n):
     for x in range(0, len(list_), n):
         every_chunk = list_[x:x+n]
         yield every_chunk
-
+    
 def process_batch(parallel, patch_paths, batch_size, patch_size):
     merge_patches = []
     for batch_paths in list_split(patch_paths, batch_size):
@@ -44,48 +44,44 @@ def main(args):
 
     parallel = Parallel(n_jobs=args.parallel_n, backend="loky")
 
-    output_dir = Path(f"{args.dataset_root}/{args.dataset_name}/merge_patch")
+    output_dir = Path(f"{args.dataset_root}/merge_patch")
     Path(output_dir).mkdir(exist_ok=True)
 
-    dataset_csv_path = Path(f"{"dataset_csv"}/{args.dataset_name}.csv")
+    dataset_csv_path = Path(f"dataset_csv/{args.dataset_name}.csv")
     class_names = get_class_names(args.dataset_name)
     
     slide_info = []
 
+# dataset_name = seegene_new
     if not dataset_csv_path.exists():
-        for data_type in ['train', 'val', 'test']:
-            for class_name in class_names:
-                class_path = f"{args.dataset_root}/{args.dataset_name}/patch/{data_type}/{class_name}"
-                slide_paths = [p for p in Path(class_path).glob('*') if p.is_dir()]
+        for class_name in class_names:
+            class_path = f"{args.dataset_root}/patches/{args.magnification}/{args.size}/{class_name}"
+            slide_paths = [p for p in Path(class_path).glob('*') if p.is_dir()]
 
-                for slide_path in tqdm(slide_paths, desc=f"{data_type}/{class_name}"):
-                    if args.dataset_name == "camelyon16":
-                        patch_paths = list(Path(slide_path, "imgs").glob('*'))
-                    elif args.dataset_name == "tcga_nsclc":
-                        slide_path = Path(slide_path)
-                        patch_paths = list(slide_path.glob('*.jpg')) + list(slide_path.glob('*/*.jpg'))
-                    else:
-                        patch_paths = list(Path(slide_path).glob('*'))
+            for slide_path in tqdm(slide_paths, desc=f"{class_name}"):
 
-                    merge_patches = process_batch(parallel, patch_paths, args.batch_size, args.patch_size)
-                    len_merge_patches = len(merge_patches)
+                patch_paths = list(Path(slide_path).glob('*'))
 
-                    for i, merge_patch in enumerate(merge_patches):
-                        merge_patch_path = Path(f"{output_dir}/{data_type}/{class_name}/{slide_path.stem}")
-                        merge_patch_path.mkdir(parents=True, exist_ok=True)
-                                            
-                        cv2.imwrite(str(Path(f"{merge_patch_path}/{slide_path.stem}_{i}{args.output_ext}")),
-                                     cv2.cvtColor(merge_patch, cv2.COLOR_RGB2BGR))
+                merge_patches = process_batch(parallel, patch_paths, args.batch_size, args.patch_size)
+                len_merge_patches = len(merge_patches)
 
-                    if args.use_caption:
-                        caption_df = pd.read_csv(f"dataset_csv/{args.dataset_name}_captions.csv")
-                        caption = caption_df[caption_df["id"] == slide_path.stem]["text"].iloc[0]
-                    else:
-                        caption = None
-                    
-                    slide_info.append([data_type, class_name, slide_path.stem, len_merge_patches, caption])
+                for i, merge_patch in enumerate(merge_patches):
+                    # merge_patch_path = Path(f"{output_dir}/{class_name}/{slide_path.stem}")
+                    merge_patch_path = Path(f"{output_dir}/{args.magnification}/{args.size}/{class_name}/{slide_path.stem}")
+                    merge_patch_path.mkdir(parents=True, exist_ok=True)
+                                        
+                    cv2.imwrite(str(Path(f"{merge_patch_path}/{slide_path.stem}_{i}{args.output_ext}")),
+                                    cv2.cvtColor(merge_patch, cv2.COLOR_RGB2BGR))
+
+                if args.use_caption:
+                    caption_df = pd.read_csv(f"dataset_csv/{args.dataset_name}_captions.csv")
+                    caption = caption_df[caption_df["id"] == slide_path.stem]["text"].iloc[0]
+                else:
+                    caption = None
+                
+                slide_info.append([class_name, slide_path.stem, len_merge_patches, caption])
         
-        slide_data = pd.DataFrame(slide_info, columns=["data_type", "class_name", "slide_id", "len_merge_patches(200)", "caption"])
+        slide_data = pd.DataFrame(slide_info, columns=["class_name", "slide_id", "len_merge_patches(200)", "caption"])
 
         slide_data = slide_data.to_csv(dataset_csv_path, index=False)
 
@@ -98,17 +94,21 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument("--dataset-root", type=str, default="/vast/kaist/WSI_datasets", help="Path to WSI dataset root folders")
-    parser.add_argument("--dataset-name", type=str, default=None, help="The name of dataset")
+    parser.add_argument("--dataset_root", type=str, default="/data1", help="Path to WSI dataset root folders")
+    parser.add_argument("--dataset_name", type=str, default="seegene_new", help="The name of dataset")
 
-    parser.add_argument("--use-caption", action="store_true", help="Use caption for the dataset")
+    parser.add_argument("--use_caption", action="store_true", help="Use caption for the dataset")
 
-    parser.add_argument("--output-ext", type=str, default=".jpg", help="Output extension of the patches")
+    parser.add_argument("--output_ext", type=str, default=".jpg", help="Output extension of the patches")
 
-    parser.add_argument("--patch-size", type=int, default=224, help="The size of each patch after resize")
+    parser.add_argument("--patch_size", type=int, default=224, help="The size of each patch after resize")
 
-    parser.add_argument("--batch-size", type=int, default=200, help="Batch size used to merge patches")
-    parser.add_argument("--parallel-n", type=int, default=10, help="Number of parallel processes to merge patches")
+    parser.add_argument("--magnification", type=str, default='x10', choices=["x5", "x10", "x20"])
+
+    parser.add_argument("--batch_size", type=int, default=200, help="Batch size used to merge patches")
+    parser.add_argument("--parallel_n", type=int, default=10, help="Number of parallel processes to merge patches")
+
+    parser.add_argument("--size", type=int, default=256, help="size of image")
     
     args = parser.parse_args()
     main(args)

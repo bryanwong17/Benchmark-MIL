@@ -10,14 +10,13 @@ from sklearn.metrics import confusion_matrix
 
 from pl_model.forward_fn import dtfdmil_forward_1st_tier, dtfdmil_forward_2nd_tier
 
+
 class DTFDTrainerModule(pl.LightningModule):
-    def __init__(self, args, seed, class_names_list, classifier_list, loss_list, metrics):
+    def __init__(self, args, seed, classifier_list, loss_list, metrics):
         super(DTFDTrainerModule, self).__init__()
 
         self.args = args
         self.seed = seed
-        self.class_names_list = class_names_list
-
         self.test_preds = []
         self.test_labels = []
 
@@ -126,13 +125,14 @@ class DTFDTrainerModule(pl.LightningModule):
         all_labels = np.concatenate(self.test_labels)
         cm = confusion_matrix(all_labels, all_preds)
 
+        class_names = ['HP', 'IP', 'LP', 'SSL', 'TA', 'TSA', 'TVA+VA']
         plt.figure(figsize=(10, 7))
-        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=self.class_names_list, yticklabels=self.class_names_list)
+        sns.heatmap(cm, annot=True, fmt='d', cmap='Blues', xticklabels=class_names, yticklabels=class_names)
         plt.xlabel('Predicted')
         plt.ylabel('True')
-        plt.title(f"{self.args.mil_model}-{self.args.distill}/{self.args.feature_extractor}/seed_{self.seed}")
+        plt.title(f"{self.args.dataset_name}/{self.args.magnification}/{self.args.patch_size}/{self.args.mil_model}/{self.args.feature_extractor}/seed_{self.seed}")
 
-        plt.savefig(f"{self.args.output_dir}/{self.args.dataset_name}/{self.args.mil_model}-{self.args.distill}/{self.args.feature_extractor}/seed_{self.seed}/confusion_matrix.jpg", format="jpg")
+        plt.savefig(f"{self.args.output_dir}/{self.args.dataset_name}/{self.args.magnification}/{self.args.patch_size}/{self.args.mil_model}/{self.args.feature_extractor}/seed_{self.seed}/confusion_matrix.jpg", format="jpg")
 
         self.test_preds = []
         self.test_labels = []

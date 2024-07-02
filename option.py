@@ -6,10 +6,10 @@ def add_common_arguments(parser):
     parser.add_argument("--output-dir", type=str, default="results", help="An output directory")
 
     # dataset related parameters
-    parser.add_argument("--dataset-root", type=str, help="Path to WSI dataset root folders")
-    parser.add_argument("--dataset-name", type=str, default=None, help="The name of dataset")
-    
-    parser.add_argument("--num-workers", type=int, default=112, help="Set number of workers equal to the number of CPU cores")
+    parser.add_argument("--dataset-name", type=str, default="data1", help="The name of dataset")
+    parser.add_argument("--magnification", type=str, default="x10", help="The magnification used to extract patches")
+    parser.add_argument("--patch-size", type=int, default=256, help="The size of patches")
+    parser.add_argument("--num-workers", type=int, default=32, help="Set number of workers equal to the number of CPU cores")
 
     # feature extractor
     parser.add_argument("--feature-extractor", type=str, default="resnet50-tr-supervised-imagenet1k", help="The name of feature extractor")
@@ -22,8 +22,6 @@ def add_common_arguments(parser):
                         help="The name of MIL model or aggregator")
 
     # training related parameters
-    parser.add_argument("--few-shot-samples-per-class", type=int, default=None, help="Number of samples per class for few-shot learning")
-
     parser.add_argument("--epochs", type=int, default=200, help="Number of epochs to train")
     parser.add_argument("--precision", type=int, default=32, help="32 or 16 bit precision during training")
     parser.add_argument("--lr", type=float, default=1e-4, help="Initial learning rate (default: 1e-4)")

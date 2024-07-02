@@ -10,13 +10,11 @@ from sklearn.metrics import confusion_matrix
 from pytorch_optimizer import Lookahead
 
 class MILTrainerModule(pl.LightningModule):
-    def __init__(self, args, seed, class_names_list, classifier, loss, metrics, num_classes, forward_func="general"):
+    def __init__(self, args, seed, classifier, loss, metrics, num_classes, forward_func="general"):
         super(MILTrainerModule, self).__init__()
 
         self.args = args
         self.seed = seed
-        self.class_names_list = class_names_list
-
         self.test_preds = []
         self.test_labels = []
         
@@ -34,9 +32,9 @@ class MILTrainerModule(pl.LightningModule):
 
         self.accumulate_grad_batches = args.accumulate_grad_batches
 
-        self.train_metrics = metrics.clone(postfix='/train')
-        self.val_metrics = nn.ModuleList([metrics.clone(postfix='/val'), metrics.clone(postfix='/test')])
-        self.test_metrics = metrics.clone(prefix='final_test/')
+        self.train_metrics = metrics.clone(postfix="/train")
+        self.val_metrics = nn.ModuleList([metrics.clone(postfix="/val"), metrics.clone(postfix="/test")])
+        self.test_metrics = metrics.clone(prefix="final_test/")
         
         self.save_hyperparameters("args")
     
@@ -114,13 +112,14 @@ class MILTrainerModule(pl.LightningModule):
         all_labels = np.concatenate(self.test_labels)
         cm = confusion_matrix(all_labels, all_preds)
 
+        class_names = ["HP", "IP", "LP", "SSL", "TA", "TSA", "TVA+VA"]
         plt.figure(figsize=(10, 7))
-        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=self.class_names_list, yticklabels=self.class_names_list)
+        sns.heatmap(cm, annot=True, fmt="d", cmap="Blues", xticklabels=class_names, yticklabels=class_names)
         plt.xlabel("Predicted")
         plt.ylabel("True")
-        plt.title(f"{self.args.mil_model}/{self.args.feature_extractor}/seed_{self.seed}")
+        plt.title(f"{self.args.dataset_name}/{self.args.magnification}/{self.args.patch_size}/{self.args.mil_model}/{self.args.feature_extractor}/seed_{self.seed}")
 
-        plt.savefig(f"{self.args.output_dir}/{self.args.dataset_name}/{self.args.mil_model}/{self.args.feature_extractor}/seed_{self.seed}/confusion_matrix.jpg", format="jpg")
+        plt.savefig(f"{self.args.output_dir}/{self.args.dataset_name}/{self.args.magnification}/{self.args.patch_size}/{self.args.mil_model}/{self.args.feature_extractor}/seed_{self.seed}/confusion_matrix.jpg", format="jpg")
 
         self.test_preds = []
         self.test_labels = []

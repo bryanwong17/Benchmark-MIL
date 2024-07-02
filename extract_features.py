@@ -64,12 +64,13 @@ def feature_extractor_forward(data, feature_extractor, batch_size):
     return feats
 
 @hydra.main(
-    version_base="1.2.0", config_path="config", config_name="default"
+    version_base="1.2.0", config_path="config", config_name="resnet50-tr-supervised-imagenet1k"
 )
 def main(cfg: DictConfig):
     start_time = time.time()
 
-    features_dir = Path(cfg.dataset.root, cfg.dataset.name, "feature", cfg.feature_extractor.name)
+    # features_dir = Path(cfg.dataset.root, cfg.dataset.name, "feature", cfg.feature_extractor.name)
+    features_dir = Path(cfg.dataset.root, "TissueFeatures", cfg.feature_extractor.name, cfg.magnification, cfg.size)
     features_dir.mkdir(parents=True, exist_ok=True)
     
     device = torch.device("cuda:" + str(cfg.gpu_id) if torch.cuda.is_available() else "cpu")
@@ -81,7 +82,7 @@ def main(cfg: DictConfig):
     class_names_list = get_class_names(cfg.dataset.name)
     print(f"{len(dataset_df)} slides found consisting of {len(class_names_list)} classes")
 
-    extract_patch_dataset = ExtractFeaturesWSIDataset(cfg.dataset.root, cfg.dataset.name, dataset_df, cfg.dataset.mean, cfg.dataset.std, class_names_list)
+    extract_patch_dataset = ExtractFeaturesWSIDataset(cfg.dataset.root, cfg.dataset.name, dataset_df, cfg.dataset.mean, cfg.dataset.std, class_names_list, cfg.magnification, cfg.size)
     loader = DataLoader(extract_patch_dataset, batch_size=1, shuffle=False, collate_fn=collate_fn)
 
     feature_extractor, num_feats = get_feature_extractor(cfg.feature_extractor.name, cfg.feature_extractor.pretrained_path)
@@ -101,19 +102,40 @@ def main(cfg: DictConfig):
     ) as t1:
 
         for i, batch in enumerate(t1):
-            data_type, class_name, slide_id, patches, caption = batch
+            # data_type, class_name, slide_id, patches, caption = batch
+            class_name, tissue_id, patches = batch
     
             patches = patches.squeeze(0).to(device) # remove batch size(1)
 
             feats = feature_extractor_forward(patches, feature_extractor, cfg.batch_size)
             feats = feats.view(-1, num_feats)
 
-            saved_path = Path(features_dir, data_type, str(class_name))
+            # saved_path = Path(features_dir, data_type, str(class_name))
+            saved_path = Path(features_dir, str(class_name))
             saved_path.mkdir(parents=True, exist_ok=True)
 
-            data_to_save = {"features": feats, "caption": caption}
+            # slide_path = saved_path / "slide"
+            # slide_path.mkdir(parents=True, exist_ok=True)
 
-            torch.save(data_to_save, Path(f"{saved_path}/{slide_id}.pt"))
+            # data_to_save = {"features": feats, "caption": caption}
+            data_to_save = {"features": feats}
+            tissue_dir = saved_path / Path(tissue_id).parent
+            tissue_dir.mkdir(parents=True, exist_ok=True)
+
+            # torch.save(data_to_save, saved_path / f"{tissue_id}.pt")
+            torch.save(data_to_save, tissue_dir / f"{Path(tissue_id).name}.pt")
+
+            # # save each patch
+            # patch_saved_path = saved_path / slide_id
+            # patch_saved_path.mkdir(parents=True, exist_ok=True)
+            
+            # # print('len feats: ', len(feats))
+            # # print('len patch_paths: ', len(patch_paths))
+
+            # for j, patch_feat in enumerate(feats):
+            #     patch_name = Path(patch_paths[j]).stem
+            #     patch_feature_path = patch_saved_path / f"{patch_name}.pt"
+            #     torch.save(patch_feat.unsqueeze(0), patch_feature_path)
 
             del patches, feats, data_to_save
             torch.cuda.empty_cache()
